@@ -1,0 +1,4 @@
+# Vercel only needs the static app folder
+base/
+template/
+tools/
