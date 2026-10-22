@@ -1,0 +1,349 @@
+<title>MOU Generator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500&display=swap">
+<style>
+/* Layout: sticky two-pane tool. Left = partner form in sections, right = live preview of the clauses that change + checks + download. */
+:root{
+  --bg:#f3f4f6; --panel:#ffffff; --ink:#1d232b; --muted:#5d6672; --line:#d9dde3;
+  --seal:#a8322d; --seal-ink:#ffffff; --seal-soft:#f6e4e2;
+  --ok:#2c6b4a; --ok-soft:#e1f0e8; --warn:#8a5a00; --warn-soft:#fbefd0;
+  --field:#fafbfc; --paper:#fffefb; --paper-ink:#22252a;
+  --display:'Newsreader',Georgia,'Times New Roman',serif;
+  --body:'IBM Plex Sans','Noto Sans SC',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --cjk:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14181d; --panel:#1c2229; --ink:#e8ebef; --muted:#9aa4af; --line:#333c46;
+  --seal:#e0625b; --seal-ink:#1a0d0c; --seal-soft:#3a1f1e;
+  --ok:#6fcf9b; --ok-soft:#1e3629; --warn:#f0c25a; --warn-soft:#3a2f12;
+  --field:#161b21; --paper:#222831; --paper-ink:#e6e8ec; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14181d; --panel:#1c2229; --ink:#e8ebef; --muted:#9aa4af; --line:#333c46;
+  --seal:#e0625b; --seal-ink:#1a0d0c; --seal-soft:#3a1f1e;
+  --ok:#6fcf9b; --ok-soft:#1e3629; --warn:#f0c25a; --warn-soft:#3a2f12;
+  --field:#161b21; --paper:#222831; --paper-ink:#e6e8ec; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+h1{font-family:var(--display);font-weight:600;font-size:30px;line-height:1.1;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.base{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:6px 10px;border-radius:4px;background:var(--panel)}
+.base b{color:var(--ink);font-weight:500}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+fieldset{border:1px solid var(--line);background:var(--panel);border-radius:6px;margin:0;padding:16px 18px 18px;min-width:0}
+legend{font-family:var(--display);font-size:18px;font-weight:600;padding:0 6px;margin-left:-6px}
+.hint{color:var(--muted);font-size:13px;margin:0 0 12px}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:520px){.row{grid-template-columns:minmax(0,1fr)}}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;min-width:0}
+.f:last-child{margin-bottom:0}
+label{font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+label .cn{text-transform:none;letter-spacing:0;font-family:var(--cjk);margin-left:6px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:8px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:64px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--seal);outline-offset:1px}
+input.cjk,textarea.cjk{font-family:var(--cjk)}
+.req::after{content:" *";color:var(--seal)}
+details{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:0}
+summary{cursor:pointer;padding:12px 18px;font-family:var(--display);font-size:18px;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:var(--body);color:var(--muted)}
+details[open] summary::after{content:"–"}
+details .in{padding:0 18px 16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--field);font-size:13px}
+.chip button{all:unset;cursor:pointer;padding:4px 10px}
+.chip button.x{padding:4px 8px 4px 2px;color:var(--muted)}
+.chip button:focus-visible{outline:2px solid var(--seal);border-radius:999px}
+.btn{font:inherit;font-weight:600;border-radius:4px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 14px;cursor:pointer}
+.btn.primary{background:var(--seal);color:var(--seal-ink);border-color:var(--seal)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.side{position:sticky;top:env(safe-area-inset-top,0px);display:flex;flex-direction:column;gap:14px;min-width:0}
+@media (max-width:900px){.side{position:static}}
+.checks{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:14px 18px}
+.checks h2,.pv-h{font-family:var(--display);font-size:18px;margin:0 0 8px}
+.checks ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.checks li{font-size:13.5px;padding:6px 10px;border-radius:4px}
+.checks li.w{background:var(--warn-soft);color:var(--warn)}
+.checks li.o{background:var(--ok-soft);color:var(--ok)}
+.act{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.msg{font-size:13px;color:var(--muted)}
+.paper{background:var(--paper);color:var(--paper-ink);border:1px solid var(--line);border-radius:3px;padding:28px 30px;font-size:13px;line-height:1.55;box-shadow:0 1px 0 var(--line);min-width:0;overflow-wrap:anywhere}
+.paper h3{font-family:var(--display);font-size:16px;text-align:center;margin:0 0 2px;text-decoration:underline;text-underline-offset:3px}
+.paper .t2{text-align:center;font-family:var(--cjk);margin:0 0 14px}
+.paper p{margin:0 0 8px}
+.paper .zh{font-family:var(--cjk);color:var(--muted);margin-bottom:12px}
+.paper .sec{font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase;margin:14px 0 6px;border-top:1px solid var(--line);padding-top:10px;color:var(--muted)}
+.paper .sig{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+.paper .sig div{border-top:1px solid var(--paper-ink);padding-top:4px;min-width:0}
+mark.ph{background:var(--warn-soft);color:var(--warn);padding:0 3px;border-radius:2px}
+mark.v{background:transparent;color:inherit;font-weight:600;border-bottom:2px solid var(--seal)}
+.pvnote{font-size:12px;color:var(--muted);margin:0 0 8px}
+.theme{all:unset;cursor:pointer;font-size:12px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.theme:focus-visible{outline:2px solid var(--seal)}
+</style>
+
+<div class="wrap">
+<header>
+  <div>
+    <h1>MOU Generator</h1>
+    <p class="sub">Fill in the partner details and download a Word MOU built from the CAMEX base agreement. Everything else in the document stays exactly as in the base.</p>
+  </div>
+  <div class="base">Base: <b>MOU, 15 Jul 2026</b> · English / 中文</div>
+</header>
+
+<div class="grid">
+<div class="col">
+
+<fieldset>
+  <legend>Partner</legend>
+  <div class="f"><label class="req" for="partnerName">Name (English)</label><input id="partnerName" data-k="partnerName" placeholder="e.g. Indonesia Chamber of Commerce and Industry"></div>
+  <div class="f"><label class="req" for="partnerNameCn">Name <span class="cn">中文名称</span></label><input class="cjk" id="partnerNameCn" data-k="partnerNameCn" placeholder="乙方中文名称"></div>
+  <div class="f"><label for="partnerDescEn">Description (English)</label><textarea id="partnerDescEn" data-k="partnerDescEn" placeholder="e.g. a national trade association representing Indonesian SMEs in food and beverage"></textarea></div>
+  <div class="f"><label for="partnerDescCn">Description <span class="cn">中文简介</span></label><textarea class="cjk" id="partnerDescCn" data-k="partnerDescCn" placeholder="乙方简介（可选）"></textarea></div>
+  <div class="row">
+    <div class="f"><label class="req" for="countrySel">Country</label>
+      <select id="countrySel"></select></div>
+    <div class="f"><label for="countryCn">Country <span class="cn">中文</span></label><input class="cjk" id="countryCn" data-k="countryCn"></div>
+  </div>
+  <div class="f" id="countryOtherWrap" hidden><label for="country">Country name (English)</label><input id="country" data-k="country" placeholder="Country name"></div>
+  <p class="hint" style="margin:0">The country name fills every “… Pavilion” reference in the objective, scope and obligations.</p>
+</fieldset>
+
+<fieldset>
+  <legend>Dates and term</legend>
+  <div class="row">
+    <div class="f"><label class="req" for="effDate">Effective date</label><input type="date" id="effDate" data-k="effDate"></div>
+    <div class="f"><label for="termYears">Term (years)</label><input type="number" min="1" max="20" id="termYears" data-k="termYears"></div>
+  </div>
+  <div class="f"><label for="noticeDays">Termination notice (days)</label><input type="number" min="1" max="365" id="noticeDays" data-k="noticeDays"></div>
+</fieldset>
+
+<fieldset>
+  <legend>Signatories</legend>
+  <p class="hint">Leave the Party B fields empty to sign by hand. Signature dates follow the effective date unless you change them.</p>
+  <div class="row">
+    <div class="f"><label for="aName">Party A name</label><input id="aName" data-k="aName"></div>
+    <div class="f"><label for="aTitle">Party A title</label><input id="aTitle" data-k="aTitle"></div>
+  </div>
+  <div class="row">
+    <div class="f"><label for="bName">Party B name</label><input id="bName" data-k="bName"></div>
+    <div class="f"><label for="bTitle">Party B title</label><input id="bTitle" data-k="bTitle"></div>
+  </div>
+  <div class="row">
+    <div class="f"><label for="aDate">Party A date</label><input type="date" id="aDate" data-k="aDate"></div>
+    <div class="f"><label for="bDate">Party B date</label><input type="date" id="bDate" data-k="bDate"></div>
+  </div>
+</fieldset>
+
+<details>
+  <summary>Appendix A: points of contact (optional)</summary>
+  <div class="in">
+    <p class="hint">Blank fields stay blank in the document so each side can complete them later.</p>
+    <div class="row">
+      <div class="f"><label for="aCName">Party A name</label><input id="aCName" data-k="aCName"></div>
+      <div class="f"><label for="bCName">Party B name</label><input id="bCName" data-k="bCName"></div>
+      <div class="f"><label for="aCTitle">Party A title</label><input id="aCTitle" data-k="aCTitle"></div>
+      <div class="f"><label for="bCTitle">Party B title</label><input id="bCTitle" data-k="bCTitle"></div>
+      <div class="f"><label for="aCEmail">Party A email</label><input id="aCEmail" data-k="aCEmail"></div>
+      <div class="f"><label for="bCEmail">Party B email</label><input id="bCEmail" data-k="bCEmail"></div>
+      <div class="f"><label for="aCPhone">Party A phone</label><input id="aCPhone" data-k="aCPhone"></div>
+      <div class="f"><label for="bCPhone">Party B phone</label><input id="bCPhone" data-k="bCPhone"></div>
+    </div>
+  </div>
+</details>
+
+<fieldset>
+  <legend>Saved partners</legend>
+  <p class="hint">Keep a partner’s details in this browser to reuse for renewals or a new country.</p>
+  <div class="act" style="margin-top:0"><button class="btn" id="saveBtn" type="button">Save current partner</button><span class="msg" id="saveMsg"></span></div>
+  <div class="chips" id="chips"></div>
+</fieldset>
+</div>
+
+<div class="side">
+  <div class="checks">
+    <h2>Before you download</h2>
+    <ul id="checks"></ul>
+    <div class="act">
+      <button class="btn primary" id="dl" type="button">Download MOU (.docx)</button>
+      <span class="msg" id="dlMsg"></span>
+    </div>
+  </div>
+  <div>
+    <h2 class="pv-h">Preview of the clauses that change</h2>
+    <p class="pvnote">Highlighted amber items are still empty. The full document has 4 pages including the Appendix.</p>
+    <div class="paper" id="paper"></div>
+  </div>
+  <div><button class="theme" id="themeBtn" type="button">Switch light / dark</button></div>
+</div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const TEMPLATE_B64="__TEMPLATE_B64__";
+const COUNTRIES=[["Brunei","文莱"],["Cambodia","柬埔寨"],["Indonesia","印度尼西亚"],["Laos","老挝"],["Malaysia","马来西亚"],["Myanmar","缅甸"],["Philippines","菲律宾"],["Singapore","新加坡"],["Thailand","泰国"],["Timor-Leste","东帝汶"],["Vietnam","越南"]];
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const DEFAULTS=()=>({partnerName:"",partnerNameCn:"",partnerDescEn:"",partnerDescCn:"",country:"",countryCn:"",
+  effDate:iso(new Date()),termYears:"2",noticeDays:"60",aName:"PHILIP CHONG",aTitle:"International Marketing Director",
+  bName:"",bTitle:"",aDate:iso(new Date()),bDate:iso(new Date()),
+  aCName:"",aCTitle:"",aCEmail:"",aCPhone:"",bCName:"",bCTitle:"",bCEmail:"",bCPhone:""});
+let S=DEFAULTS(), dateLinked={aDate:true,bDate:true};
+const $=id=>document.getElementById(id);
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const parse=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||"");return m?{y:+m[1],m:+m[2],d:+m[3]}:null};
+const fEn=s=>{const p=parse(s);return p?`${p.d} ${MON[p.m-1]} ${p.y}`:""};
+const fCn=s=>{const p=parse(s);return p?`${p.y}年${p.m}月${p.d}日`:""};
+const clean=s=>(s||"").trim();
+const strip=s=>clean(s).replace(/^[,，;；\s]+/,"").replace(/[.。\s]+$/,"");
+
+/* Build the values the template needs; missing required items become visible [TBC] markers, never guesses. */
+function values(){
+  const n=Math.max(1,parseInt(S.termYears)||2), nd=Math.max(1,parseInt(S.noticeDays)||60);
+  const de=strip(S.partnerDescEn), dc=strip(S.partnerDescCn);
+  return {
+    effDate:fEn(S.effDate)||"[date TBC]", effDateCn:fCn(S.effDate)||"【日期待填】",
+    partnerName:clean(S.partnerName)||"[Partner name TBC]",
+    partnerNameCn:clean(S.partnerNameCn)||"【乙方中文名称待填】",
+    partnerDescEn:de?", "+de:"", partnerDescCn:dc?"，"+dc:"",
+    country:clean(S.country)||"[Country TBC]", countryCn:clean(S.countryCn)||"【国家待填】",
+    termEn:n===1?"1 year":n+" years", termYears:String(n), noticeDays:String(nd),
+    aName:clean(S.aName), aTitle:clean(S.aTitle), aDate:fEn(S.aDate),
+    bName:clean(S.bName), bTitle:clean(S.bTitle), bDate:fEn(S.bDate),
+    aCName:clean(S.aCName),aCTitle:clean(S.aCTitle),aCEmail:clean(S.aCEmail),aCPhone:clean(S.aCPhone),
+    bCName:clean(S.bCName),bCTitle:clean(S.bCTitle),bCEmail:clean(S.bCEmail),bCPhone:clean(S.bCPhone)};
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function problems(){
+  const w=[];
+  if(!clean(S.partnerName))w.push("Partner name (English) is missing.");
+  if(!clean(S.partnerNameCn))w.push("Partner name in Chinese is missing. The document will show a marked 【待填】 placeholder.");
+  if(!clean(S.country))w.push("Country is missing.");
+  else if(!clean(S.countryCn))w.push("Country in Chinese is missing.");
+  if(!parse(S.effDate))w.push("Effective date is missing.");
+  if(clean(S.partnerDescEn)&&!clean(S.partnerDescCn))w.push("English description has no Chinese version. Party B’s Chinese line will have no description.");
+  if(!clean(S.partnerDescEn)&&clean(S.partnerDescCn))w.push("Chinese description has no English version.");
+  if(!clean(S.bName)||!clean(S.bTitle))w.push("Party B signatory name or title is empty. It will be left blank to sign by hand.");
+  return w;
+}
+const blocking=()=>!clean(S.partnerName)||!clean(S.country)||!parse(S.effDate);
+
+function renderChecks(){
+  const w=problems();
+  $("checks").innerHTML=w.length?w.map(x=>`<li class="w">${esc(x)}</li>`).join(""):'<li class="o">All details are filled in.</li>';
+  $("dl").disabled=blocking();
+}
+function renderPreview(){
+  const v=values();
+  const m=(val)=>/TBC|待填/.test(val)?`<mark class="ph">${esc(val)}</mark>`:`<mark class="v">${esc(val)}</mark>`;
+  const blank=(val,label)=>val?`<mark class="v">${esc(val)}</mark>`:`<mark class="ph">${label}</mark>`;
+  $("paper").innerHTML=`
+  <h3>MEMORANDUM OF UNDERSTANDING</h3><p class="t2">谅解备忘录</p>
+  <p>This MEMORANDUM OF UNDERSTANDING (“MOU”) is made on ${m(v.effDate)} (the “Effective Date”).</p>
+  <p class="zh">本谅解备忘录（以下称“本MOU”）于${m(v.effDateCn)}（以下称“生效日期”）由以下双方签订：</p>
+  <p>(1) CHINA-ASEAN MERCANTILE EXCHANGE (CAMEX) … (“Party A”);</p>
+  <p>(2) ${m(v.partnerName)}${v.partnerDescEn?`<mark class="v">${esc(v.partnerDescEn)}</mark>`:""} (hereinafter referred to as “Party B”).</p>
+  <p class="zh">${m(v.partnerNameCn)}${v.partnerDescCn?`<mark class="v">${esc(v.partnerDescCn)}</mark>`:""}（以下简称“乙方”）。</p>
+  <div class="sec">1. Objective 目的</div>
+  <p>… enhance the visibility and utilization of the ${m(v.country)} Pavilion at Party A’s platform / facility.</p>
+  <p class="zh">… 场馆内${m(v.countryCn)}馆的知名度与利用率。</p>
+  <div class="sec">2–3. Scope and obligations 合作范围</div>
+  <p><b>${m(v.country)} Pavilion</b> — Jointly promoting the ${m(v.country)} Pavilion as a showcase for ${m(v.country)} products and SMEs.</p>
+  <p><b>SME Facilitation</b> — Connecting SMEs from ${m(v.country)} with buyers, distributors, and partners in the target market.</p>
+  <div class="sec">4. General provisions 一般条款</div>
+  <p><b>Term</b> — ${m(v.termEn)}, renewable by mutual agreement. Either Party may terminate with ${m(v.noticeDays)} days’ notice.</p>
+  <p class="zh">期限为${m(v.termYears)}年 … 任何一方可提前${m(v.noticeDays)}日发出通知终止本备忘录。</p>
+  <div class="sec">5. Execution 签署</div>
+  <div class="sig">
+    <div>CHINA-ASEAN MERCANTILE EXCHANGE<br>Name: ${blank(v.aName,"name")}<br>Title: ${blank(v.aTitle,"title")}<br>Date: ${blank(v.aDate,"date")}</div>
+    <div>${m(v.partnerName)}<br>Name: ${v.bName?`<mark class="v">${esc(v.bName)}</mark>`:"<span style='color:var(--muted)'>(sign by hand)</span>"}<br>Title: ${v.bTitle?`<mark class="v">${esc(v.bTitle)}</mark>`:"<span style='color:var(--muted)'>(blank)</span>"}<br>Date: ${v.bDate?`<mark class="v">${esc(v.bDate)}</mark>`:"<span style='color:var(--muted)'>(blank)</span>"}</div>
+  </div>`;
+}
+function renderAll(){renderChecks();renderPreview()}
+
+/* inputs */
+const sel=$("countrySel");
+sel.innerHTML='<option value="">Select country</option>'+COUNTRIES.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join("")+'<option value="__other">Other (type below)</option>';
+function syncForm(){
+  document.querySelectorAll("[data-k]").forEach(el=>{el.value=S[el.dataset.k]??""});
+  const known=COUNTRIES.find(c=>c[0]===S.country);
+  sel.value=known?known[0]:(S.country?"__other":"");
+  $("countryOtherWrap").hidden=sel.value!=="__other";
+}
+document.querySelectorAll("[data-k]").forEach(el=>el.addEventListener("input",()=>{
+  const k=el.dataset.k;S[k]=el.value;
+  if(k==="effDate"){ if(dateLinked.aDate){S.aDate=S.effDate;$("aDate").value=S.aDate} if(dateLinked.bDate){S.bDate=S.effDate;$("bDate").value=S.bDate} }
+  if(k==="aDate")dateLinked.aDate=false; if(k==="bDate")dateLinked.bDate=false;
+  renderAll();
+}));
+sel.addEventListener("change",()=>{
+  if(sel.value==="__other"){S.country="";S.countryCn="";}
+  else if(sel.value===""){S.country="";S.countryCn="";}
+  else{const c=COUNTRIES.find(x=>x[0]===sel.value);S.country=c[0];S.countryCn=c[1]}
+  $("countryOtherWrap").hidden=sel.value!=="__other";
+  $("country").value=S.country;$("countryCn").value=S.countryCn;renderAll();
+});
+
+/* saved partners (this browser only) */
+const KEY="mou-generator-partners";
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){return null}};
+const store=a=>{try{localStorage.setItem(KEY,JSON.stringify(a));return true}catch(e){return false}};
+function renderChips(){
+  const a=load()||[];
+  $("chips").innerHTML=a.length?a.map((p,i)=>`<span class="chip"><button type="button" data-l="${i}">${esc(p.partnerName||"Untitled")} · ${esc(p.country||"")}</button><button class="x" type="button" data-d="${i}" aria-label="Remove ${esc(p.partnerName||"partner")}">×</button></span>`).join(""):'<span class="msg">No saved partners yet.</span>';
+}
+$("chips").addEventListener("click",e=>{
+  const a=load()||[];const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.l!==undefined){const p=a[+b.dataset.l];if(p){S=Object.assign(DEFAULTS(),p,{effDate:S.effDate,aDate:S.effDate,bDate:S.effDate});dateLinked={aDate:true,bDate:true};syncForm();renderAll()}}
+  if(b.dataset.d!==undefined){a.splice(+b.dataset.d,1);store(a);renderChips()}
+});
+$("saveBtn").addEventListener("click",()=>{
+  if(!clean(S.partnerName)){$("saveMsg").textContent="Enter a partner name first.";return}
+  const a=load();if(a===null){$("saveMsg").textContent="Saving is not available in this browser.";return}
+  const i=a.findIndex(p=>p.partnerName===S.partnerName&&p.country===S.country);
+  if(i>=0)a[i]=S;else a.push(S);
+  $("saveMsg").textContent=store(a)?"Saved in this browser.":"Saving is not available in this browser.";renderChips();
+});
+
+/* document build */
+async function buildDocx(){
+  const zip=await JSZip.loadAsync(TEMPLATE_B64,{base64:true});
+  let xml=await zip.file("word/document.xml").async("string");
+  const v=values();
+  xml=xml.replace(/\{(\w+)\}/g,(_,k)=>{if(!(k in v))throw new Error("Unknown placeholder "+k);return esc(v[k]).replace(/"/g,"&quot;")});
+  zip.file("word/document.xml",xml);
+  return zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",compression:"DEFLATE"});
+}
+function fname(){
+  const p=(clean(S.partnerName)||"Partner").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40);
+  return `MOU_CAMEX_${p}_${(S.effDate||"").replace(/-/g,"")}.docx`;
+}
+$("dl").addEventListener("click",async()=>{
+  const msg=$("dlMsg");msg.textContent="Building…";
+  try{
+    const blob=await buildDocx(), name=fname();
+    let dls=null;try{dls=window.claude&&await window.claude.use("downloads")}catch(e){}
+    if(dls){
+      try{await dls.save({filename:name,data:blob});msg.textContent="Saved "+name}
+      catch(e){msg.textContent=e&&e.code==="declined"?"Download cancelled.":"This view cannot save files. Open the app in a full browser tab."}
+    }else{
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();msg.textContent="Downloaded "+name;
+    }
+  }catch(e){msg.textContent="Could not build the document: "+e.message}
+});
+
+/* theme */
+$("themeBtn").addEventListener("click",()=>{
+  const r=document.documentElement,cur=r.dataset.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  r.dataset.theme=cur==="dark"?"light":"dark";
+});
+
+/* the form opens empty; the preview shows amber placeholders until each field is filled */
+syncForm();renderChips();renderAll();
+</script>
